@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class InventoryController extends Controller
 {
@@ -70,13 +71,37 @@ class InventoryController extends Controller
     }
 
     // 4. Halaman Jadwal Shalat & Agenda QC
-    public function jadwal()
+    public function jadwal(Request $request)
     {
         $qcEvents = QcEvent::orderBy('event_date', 'asc')->get();
         $now = Carbon::now('Asia/Jakarta');
-        $prayerSchedule = $this->getPrayerSchedule($now);
+        $validated = $request->validate([
+            'date' => ['sometimes', 'date_format:Y-m-d'],
+        ]);
+        $selectedDate = $validated['date'] ?? $now->toDateString();
+        $prayerSchedule = $this->getPrayerSchedule(Carbon::createFromFormat('Y-m-d', $selectedDate, 'Asia/Jakarta'));
 
-        return view('inventory.jadwal', compact('qcEvents', 'now', 'prayerSchedule'));
+        return view('inventory.jadwal', compact('qcEvents', 'now', 'prayerSchedule', 'selectedDate'));
+    }
+
+    public function prayerSchedule(Request $request)
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+        $date = Carbon::createFromFormat('Y-m-d', $validated['date'], 'Asia/Jakarta');
+        $schedule = $this->getPrayerSchedule($date);
+
+        if ($schedule === null) {
+            return response()->json([
+                'message' => 'Jadwal shalat untuk tanggal ini tidak tersedia. Silakan coba lagi.',
+            ], 503);
+        }
+
+        return response()->json([
+            'date' => $date->toDateString(),
+            ...$schedule,
+        ]);
     }
 
     // 5. Halaman Data Sampah (Trash Bin)
@@ -118,9 +143,45 @@ class InventoryController extends Controller
     }
 
     // 6. Halaman Profil Akun
-    public function profile()
+    public function profile(Request $request)
     {
-        return view('inventory.profile');
+        $profile = $request->user();
+
+        return view('inventory.profile', compact('profile'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'location' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'phone' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'photo' => ['sometimes', 'required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        if (! $request->hasAny(['name', 'location', 'phone']) && ! $request->hasFile('photo')) {
+            abort(422, 'Tidak ada perubahan profil yang dikirim.');
+        }
+
+        $profile = $request->user();
+        $oldPhotoPath = $profile->photo_path;
+        $updates = collect($validated)->only(['name', 'location', 'phone'])->all();
+
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('profiles', 'public');
+            if ($photoPath === false) {
+                throw new \RuntimeException('Foto profil gagal disimpan.');
+            }
+            $updates['photo_path'] = $photoPath;
+        }
+
+        $profile->update($updates);
+
+        if (isset($updates['photo_path']) && $oldPhotoPath) {
+            Storage::disk('public')->delete($oldPhotoPath);
+        }
+
+        return redirect()->route('inventory.profile')->with('success', 'Profil berhasil diperbarui.');
     }
 
     // 7. Simpan Barang Baru (Tambah)
@@ -152,17 +213,19 @@ class InventoryController extends Controller
     {
         $item = Item::findOrFail($id);
 
-        $request->validate([
+        $validated = $request->validate([
             'nama_barang' => 'required|string|max:255',
             'no_seri'     => 'required|string|unique:items,no_seri,' . $id,
+            'barcode'     => 'nullable|string|max:255',
             'jumlah'      => 'required|integer|min:1',
             'tanggal'     => 'required|date',
             'status'      => 'required|in:Belum dicek,Siap Kirim,Bermasalah',
+            'keterangan'  => 'nullable|string',
         ]);
 
-        $item->update($request->all());
+        $item->update($validated);
 
-        return redirect()->route('inventory.data')->with('success', 'Data barang berhasil diperbarui!');
+        return redirect()->route('inventory.show', $item->id)->with('success', 'Data barang berhasil diperbarui!');
     }
 
     // 9. Hapus Barang (Pindah ke Trash)
@@ -188,14 +251,42 @@ class InventoryController extends Controller
     // 10. Simpan Agenda QC
     public function storeQcEvent(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title'      => 'required|string|max:255',
             'event_date' => 'required|date',
+            'event_time' => 'nullable|date_format:H:i',
         ]);
 
-        QcEvent::create($request->all());
+        QcEvent::create([
+            ...$validated,
+            'created_by' => $request->user()->name,
+        ]);
 
-        return redirect()->back()->with('success', 'Agenda QC berhasil ditambahkan!');
+        return redirect()->route('inventory.jadwal', ['date' => $validated['event_date']])
+            ->with('success', 'Agenda QC berhasil ditambahkan!');
+    }
+
+    public function updateQcEvent(Request $request, QcEvent $event)
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'event_date' => ['required', 'date_format:Y-m-d'],
+            'event_time' => ['nullable', 'date_format:H:i'],
+        ]);
+
+        $event->update($validated);
+
+        return redirect()->route('inventory.jadwal', ['date' => $validated['event_date']])
+            ->with('success', 'Agenda QC berhasil diperbarui!');
+    }
+
+    public function destroyQcEvent(QcEvent $event)
+    {
+        $eventDate = $event->event_date;
+        $event->delete();
+
+        return redirect()->route('inventory.jadwal', ['date' => $eventDate])
+            ->with('success', 'Agenda QC berhasil dihapus.');
     }
 
     public function show($id)
@@ -209,7 +300,7 @@ class InventoryController extends Controller
     {
         $cacheKey = 'prayer-times-karawang-' . $date->toDateString();
 
-        return Cache::remember($cacheKey, $date->copy()->endOfDay(), function () use ($date) {
+        return Cache::remember($cacheKey, now('Asia/Jakarta')->addDays(30), function () use ($date) {
             try {
                 $response = Http::acceptJson()
                     ->timeout(5)

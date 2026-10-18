@@ -36,12 +36,7 @@
     <h2 class="fw-bold m-0 text-white text-decoration-underline" style="text-underline-offset: 8px;">Dashboard</h2>
     
     <!-- Button Profile Kapsul -->
-    <a href="{{ route('inventory.profile') }}" class="btn rounded-pill px-3 py-2 text-white d-flex align-items-center gap-2 border-0 shadow-sm" style="background-color: rgba(255, 255, 255, 0.25);">
-        <div class="rounded-circle bg-white d-flex align-items-center justify-content-center text-primary fw-bold" style="width: 30px; height: 30px; font-size: 14px;">
-            <i class="bi bi-person-fill"></i>
-        </div>
-        <span class="fw-semibold small">Chantikka Revinna</span>
-    </a>
+    @include('partials.profile-button')
 </div>
 
 <!-- 2. Widget Jadwal Shalat -->
@@ -188,12 +183,12 @@
             <tbody>
                 @forelse($items->take(5) as $item)
                 <tr class="bg-white text-center shadow-sm clickable-row" style="border-radius: 10px; cursor: pointer;" onclick="window.location='{{ route('inventory.show', $item->id) }}'">
-                    <td class="fw-bold text-start ps-4 py-3" style="border-top-left-radius: 10px; border-bottom-left-radius: 10px;">{{ $item->nama_barang }}</td>
+                    <td class="fw-bold text-start ps-4 py-2" style="border-top-left-radius: 10px; border-bottom-left-radius: 10px;">{{ $item->nama_barang }}</td>
                     <td>{{ $item->no_seri }}</td>
                     <td>{{ $item->barcode }}</td>
                     <td>{{ $item->jumlah }}</td>
                     <td>{{ $item->keterangan ?? '-' }}</td>
-                    <td>{{ $item->tanggal }}</td>
+                    <td>{{ \Illuminate\Support\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
                     <td class="pe-3" style="border-top-right-radius: 10px; border-bottom-right-radius: 10px;">
                         @if($item->status == 'Siap Kirim')
                             <span class="badge px-3 py-2 fw-bold" style="background-color: #dcfce7; color: #15803d !important; border-radius: 6px; font-size: 12px;">Siap Kirim</span>

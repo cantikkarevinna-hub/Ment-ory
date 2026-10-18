@@ -39,7 +39,7 @@
                     <td>{{ $item->barcode }}</td>
                     <td>{{ $item->jumlah }}</td>
                     <td>{{ $item->keterangan ?? '-' }}</td>
-                    <td>{{ $item->tanggal }}</td>
+                    <td>{{ \Illuminate\Support\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
                     <td>
                         <form action="{{ route('inventory.restore', $item->id) }}" method="POST" class="d-inline">
                             @csrf

@@ -29,40 +29,34 @@
 <div class="main-banner d-flex justify-content-between align-items-center mb-4 p-4 rounded-4" style="background-color: #557cb8;">
     <h2 class="fw-bold m-0 text-white text-decoration-underline" style="text-underline-offset: 8px;">Inventaris System</h2>
     
-    <a href="{{ route('inventory.profile') }}" class="btn rounded-pill px-3 py-2 text-white d-flex align-items-center gap-2 border-0 shadow-sm" style="background-color: rgba(255, 255, 255, 0.25);">
-        <div class="rounded-circle bg-white d-flex align-items-center justify-content-center text-primary fw-bold" style="width: 30px; height: 30px; font-size: 14px;">
-            <i class="bi bi-person-fill"></i>
-        </div>
-        <span class="fw-semibold small">Chantikka Revinna</span>
-    </a>
+    @include('partials.profile-button')
 </div>
 
 <!-- 1. Controls Bar (Top Control) -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <!-- Searchbar Diperpanjang -->
-    <form action="{{ route('inventory.data') }}" method="GET" class="position-relative">
-        <input type="text" name="search" class="form-control rounded-pill px-3 py-2 pe-4 text-dark bg-white shadow-sm border" placeholder="Cari barang atau NO Seri..." value="{{ request('search') }}" style="width: 420px; font-size: 14px; border-color: #d1d5db !important;">
+    <form action="{{ route('inventory.data') }}" method="GET" class="position-relative flex-grow-1" style="max-width: 420px;">
+        <input type="text" name="search" class="form-control rounded-pill px-3 py-2 pe-4 text-dark bg-white shadow-sm border" placeholder="Cari barang atau NO Seri..." value="{{ request('search') }}" style="width: 100%; font-size: 14px; border-color: #d1d5db !important;">
         <i class="bi bi-search position-absolute end-0 top-50 translate-middle-y me-3 text-muted fs-6"></i>
     </form>
 
     <!-- Filter Status dengan Biru Khusus (#0284c7) -->
-    <div class="d-flex gap-3 align-items-center">
+    <div class="d-flex gap-3 align-items-center flex-wrap">
         <a href="{{ route('inventory.data') }}" class="btn btn-sm px-4 py-2 rounded-pill fw-semibold shadow-sm {{ !request('status') ? 'text-white' : 'btn-light text-dark border' }}" style="font-size: 14px; {{ !request('status') ? 'background-color: #0284c7; border: none;' : '' }}">Semua</a>
         <a href="{{ route('inventory.data', ['status' => 'Belum dicek']) }}" class="btn btn-sm px-4 py-2 rounded-pill fw-semibold shadow-sm {{ request('status') == 'Belum dicek' ? 'text-white' : 'btn-light text-dark border' }}" style="font-size: 14px; {{ request('status') == 'Belum dicek' ? 'background-color: #0284c7; border: none;' : '' }}">Belum di Cek</a>
         <a href="{{ route('inventory.data', ['status' => 'Bermasalah']) }}" class="btn btn-sm px-4 py-2 rounded-pill fw-semibold shadow-sm {{ request('status') == 'Bermasalah' ? 'text-white' : 'btn-light text-dark border' }}" style="font-size: 14px; {{ request('status') == 'Bermasalah' ? 'background-color: #0284c7; border: none;' : '' }}">Bermasalah</a>
         <a href="{{ route('inventory.data', ['status' => 'Siap Kirim']) }}" class="btn btn-sm px-4 py-2 rounded-pill fw-semibold shadow-sm {{ request('status') == 'Siap Kirim' ? 'text-white' : 'btn-light text-dark border' }}" style="font-size: 14px; {{ request('status') == 'Siap Kirim' ? 'background-color: #0284c7; border: none;' : '' }}">Siap Kirim</a>
+        <!-- Tombol + Tambah dengan Pemicu JS Manual -->
+        <button type="button" class="btn px-4 py-2 fw-bold text-white border-0 shadow-sm btn-hover-effect" onclick="bukaModalTambah()" style="background-color: #557cb8; border-radius: 12px; font-size: 15px;">
+            + Tambah
+        </button>
     </div>
-
-    <!-- Tombol + Tambah dengan Pemicu JS Manual -->
-    <button type="button" class="btn px-4 py-2 fw-bold text-white border-0 shadow-sm btn-hover-effect" onclick="bukaModalTambah()" style="background-color: #557cb8; border-radius: 12px; font-size: 15px;">
-        + Tambah
-    </button>
 </div>
 
 <!-- 2. Box Abu-abu Utama -->
 <div class="px-4 pt-2 pb-4 rounded-4" style="background-color: #d1d5db; min-height: 480px;">
     <div class="table-responsive">
-        <table class="table table-borderless align-middle mb-0" style="border-collapse: separate; border-spacing: 0 8px;">
+        <table class="table table-borderless align-middle mb-0 inventory-table" style="border-collapse: separate; border-spacing: 0 8px;">
             <thead style="background: transparent !important;">
                 <tr class="text-dark fw-bold small text-center" style="background: transparent !important;">
                     <th class="text-start ps-4 pt-2 pb-2" style="width: 20%; background: transparent !important;">Nama Barang</th>
@@ -77,12 +71,12 @@
             <tbody>
                 @forelse($items as $item)
                 <tr class="bg-white text-center shadow-sm clickable-row" style="border-radius: 10px; cursor: pointer;" onclick="window.location='{{ route('inventory.show', $item->id) }}'">
-                    <td class="fw-bold text-start ps-4 py-3" style="border-top-left-radius: 10px; border-bottom-left-radius: 10px;">{{ $item->nama_barang }}</td>
+                    <td class="fw-bold text-start ps-4 py-2" style="border-top-left-radius: 10px; border-bottom-left-radius: 10px;">{{ $item->nama_barang }}</td>
                     <td>{{ $item->no_seri }}</td>
                     <td>{{ $item->barcode }}</td>
                     <td>{{ $item->jumlah }}</td>
                     <td>{{ $item->keterangan ?? '-' }}</td>
-                    <td>{{ $item->tanggal }}</td>
+                    <td>{{ \Illuminate\Support\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
                     <td>
                         @if($item->status == 'Siap Kirim')
                             <span class="badge px-3 py-2 fw-bold" style="background-color: #dcfce7; color: #15803d !important; border-radius: 6px; font-size: 12px;">Siap Kirim</span>
@@ -151,7 +145,7 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold small text-secondary">Tanggal Masuk</label>
-                        <input type="date" name="tanggal" class="form-control rounded-3" value="{{ date('Y-m-d') }}" required>
+                        <input type="date" name="tanggal" class="form-control rounded-3" value="{{ now('Asia/Jakarta')->toDateString() }}" required>
                     </div>
                 </div>
                 <div class="mb-3">

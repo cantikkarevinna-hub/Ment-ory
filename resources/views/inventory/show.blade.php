@@ -23,12 +23,7 @@
 <div class="main-banner d-flex justify-content-between align-items-center mb-4 p-4 rounded-4" style="background-color: #557cb8;">
     <h2 class="fw-bold m-0 text-white text-decoration-underline" style="text-underline-offset: 8px;">Detail & Update Barang</h2>
     
-    <a href="{{ route('inventory.profile') }}" class="btn rounded-pill px-3 py-2 text-white d-flex align-items-center gap-2 border-0 shadow-sm" style="background-color: rgba(255, 255, 255, 0.25);">
-        <div class="rounded-circle bg-white d-flex align-items-center justify-content-center text-primary fw-bold" style="width: 30px; height: 30px; font-size: 14px;">
-            <i class="bi bi-person-fill"></i>
-        </div>
-        <span class="fw-semibold small">Chantikka Revinna</span>
-    </a>
+    @include('partials.profile-button')
 </div>
 
 <!-- Form Update & Detail Informasi -->
@@ -76,7 +71,7 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold small text-secondary">Tanggal Masuk</label>
-                        <input type="date" name="tanggal" class="form-control rounded-3" value="{{ $item->tanggal }}" required>
+                        <input type="date" name="tanggal" class="form-control rounded-3" value="{{ \Illuminate\Support\Carbon::parse($item->tanggal)->toDateString() }}" required>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -95,12 +90,12 @@
                 <!-- Informasi Waktu Pembuatan & Penanggung Jawab Akun Aktif -->
                 <div class="p-3 rounded-3 bg-light mb-4 border" style="font-size: 14px;">
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-secondary"><i class="bi bi-clock me-1"></i> Waktu & Jam Dibuat:</span>
-                        <strong class="text-dark">{{ $item->created_at ? $item->created_at->format('d-m-Y H:i:s') : $item->tanggal . ' 09:47:27 WIB' }}</strong>
+                        <span class="text-secondary"><i class="bi bi-clock me-1"></i> Terakhir diperbarui:</span>
+                        <strong class="text-dark">{{ $item->updated_at?->copy()->setTimezone('Asia/Jakarta')->format('d-m-Y H:i:s') ?? '-' }} WIB</strong>
                     </div>
                     <div class="d-flex justify-content-between">
                         <span class="text-secondary"><i class="bi bi-person-badge me-1"></i> Penanggung Jawab (Akun Aktif):</span>
-                        <strong class="text-primary">Chantikka Revinna</strong>
+                        <strong class="text-primary">{{ auth()->user()->name }}</strong>
                     </div>
                 </div>
             </form>

@@ -13,6 +13,11 @@
             background-color: #f0f2f5; 
             font-family: 'Plus Jakarta Sans', sans-serif; 
         }
+
+        .table tbody td {
+            font-size: 13px;
+            line-height: 1.25;
+        }
         
         /* Area Kolom Sidebar Menyatu dengan Warna Abu-abu Body */
         .sidebar-wrapper {
@@ -169,6 +174,9 @@
                     <a href="{{ route('inventory.data') }}" class="{{ request()->routeIs('inventory.data') ? 'active' : '' }}">Data Inventaris</a>
                     <a href="{{ route('inventory.laporan') }}" class="{{ request()->routeIs('inventory.laporan') ? 'active' : '' }}">Laporan</a>
                     <a href="{{ route('inventory.jadwal') }}" class="{{ request()->routeIs('inventory.jadwal') ? 'active' : '' }}">Jadwal & Acara</a>
+                    @if(auth()->user()->isAdmin())
+                        <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Panel Admin</a>
+                    @endif
                 </div>
 
                 <!-- Tombol Trash Bin Bulat Di Bawah -->
@@ -176,6 +184,10 @@
                     <a href="{{ route('inventory.trash') }}" class="trash-bin-btn" title="Riwayat Dihapus">
                         <i class="bi bi-trash3-fill"></i>
                     </a>
+                    <form action="{{ route('logout') }}" method="POST" class="px-4 mt-3">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-light w-100">Keluar</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -205,7 +217,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.auto-toast').forEach(function (toast) {

@@ -7,6 +7,23 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Ment-ory account setup
+
+All application pages require login. Run database migrations and create the public
+photo-storage link, then create the first administrator from a terminal:
+
+```bash
+php artisan migrate
+php artisan storage:link
+php artisan app:create-admin
+```
+
+The admin command prompts for a name, email, and password (minimum 12 characters);
+the password is not stored in source code. Sign in at `/login`. Members can create
+their own member-only accounts from `/register`; no sample member accounts are seeded.
+Admins can review registered accounts, roles, profile details, last login, and
+inventory summaries from the **Panel Admin** menu.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
