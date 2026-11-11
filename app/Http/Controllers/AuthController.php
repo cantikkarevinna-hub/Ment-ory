@@ -49,18 +49,16 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:10', 'confirmed'],
         ]);
 
-        $user = User::create([
+        User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
             'role' => 'member',
-            'last_login_at' => now(),
         ]);
 
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return redirect()->route('inventory.index')->with('success', 'Akun anggota berhasil dibuat.');
+        return redirect()
+            ->route('login')
+            ->with('success', 'Akun anggota berhasil dibuat. Silakan login.');
     }
 
     public function logout(Request $request): RedirectResponse

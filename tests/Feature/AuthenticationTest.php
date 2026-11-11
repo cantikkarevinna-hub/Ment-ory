@@ -14,11 +14,18 @@ class AuthenticationTest extends TestCase
     public function test_guest_is_redirected_to_login_and_can_view_registration(): void
     {
         $this->get(route('inventory.index'))->assertRedirect(route('login'));
-        $this->get(route('login'))->assertOk()->assertSee('Masuk ke akun');
-        $this->get(route('register'))->assertOk()->assertSee('Daftar akun anggota');
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Masuk ke akun')
+            ->assertSee('href="'.route('register').'"', false)
+            ->assertDontSee('data-bs-toggle="modal"', false);
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee('Daftar akun anggota')
+            ->assertSee('name="password_confirmation"', false);
     }
 
-    public function test_registration_creates_member_account_and_logs_them_in(): void
+    public function test_registration_creates_member_account_and_returns_to_login_without_authenticating(): void
     {
         $response = $this->post(route('register.store'), [
             'name' => 'Anggota Baru',
@@ -28,15 +35,23 @@ class AuthenticationTest extends TestCase
             'role' => 'admin',
         ]);
 
-        $response->assertRedirect(route('inventory.index'));
-        $this->assertAuthenticated();
+        $response->assertRedirect(route('login'));
+        $this->assertGuest();
         $this->assertDatabaseHas('users', [
             'name' => 'Anggota Baru',
             'email' => 'anggota@example.test',
             'role' => 'member',
+            'last_login_at' => null,
         ]);
-        $this->assertNotNull(User::where('email', 'anggota@example.test')->firstOrFail()->last_login_at);
+        $response->assertSessionHas('success', 'Akun anggota berhasil dibuat. Silakan login.');
         $this->assertDatabaseMissing('users', ['role' => 'admin']);
+
+        $this->post(route('login.store'), [
+            'email' => 'anggota@example.test',
+            'password' => 'password-anggota-123',
+        ])->assertRedirect(route('inventory.index'));
+
+        $this->assertAuthenticatedAs(User::where('email', 'anggota@example.test')->firstOrFail());
     }
 
     public function test_member_cannot_open_admin_dashboard(): void

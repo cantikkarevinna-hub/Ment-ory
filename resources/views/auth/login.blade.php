@@ -5,6 +5,9 @@
 @section('content')
 <h1 class="h4 fw-bold text-center mb-1">Masuk ke akun</h1>
 <p class="text-secondary text-center mb-4">Masuk untuk melanjutkan ke Ment-ory.</p>
+@if(session('success'))
+    <div class="alert alert-success" role="status">{{ session('success') }}</div>
+@endif
 <form action="{{ route('login.store') }}" method="POST">
     @csrf
     <div class="mb-3">
